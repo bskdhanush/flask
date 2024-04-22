@@ -158,6 +158,57 @@ def github():
         created_at_issues.append(array)
 
     '''
+    Monthly pull requests
+    Format the data by grouping by month
+    '''
+    created_at = df['pr_created_at'].sort_values(ascending=True)
+    month_pr_created = pd.to_datetime(
+        pd.Series(created_at), format='%Y/%m/%d')
+    month_pr_created.index = month_pr_created.dt.to_period('m')
+    month_pr_created = month_pr_created.groupby(level=0).size()
+    month_pr_created = month_pr_created.reindex(pd.period_range(
+        month_pr_created.index.min(), month_pr_created.index.max(), freq='m'), fill_value=0)
+    month_pr_created_dict = month_pr_created.to_dict()
+    pr_created_at_issues = []
+    for key in month_pr_created_dict.keys():
+        array = [str(key), month_pr_created_dict[key]]
+        pr_created_at_issues.append(array)
+
+
+    '''
+    Monthly commits 
+    Format the data by grouping by month
+    '''
+    created_at = df['commit_created_at'].sort_values(ascending=True)
+    month_commit_created = pd.to_datetime(
+        pd.Series(created_at), format='%Y/%m/%d')
+    month_commit_created.index = month_commit_created.dt.to_period('m')
+    month_commit_created = month_commit_created.groupby(level=0).size()
+    month_commit_created = month_commit_created.reindex(pd.period_range(
+        month_commit_created.index.min(), month_commit_created.index.max(), freq='m'), fill_value=0)
+    month_commit_created_dict = month_commit_created.to_dict()
+    commit_created_at_issues = []
+    for key in month_commit_created_dict.keys():
+        array = [str(key), month_commit_created_dict[key]]
+        commit_created_at_issues.append(array)
+    '''
+    Monthly branches 
+    Format the data by grouping by month
+    '''
+    created_at = df['branch_created_at'].sort_values(ascending=True)
+    month_branch_created = pd.to_datetime(
+        pd.Series(created_at), format='%Y/%m/%d')
+    month_branch_created.index = month_branch_created.dt.to_period('m')
+    month_branch_created = month_branch_created.groupby(level=0).size()
+    month_branch_created = month_branch_created.reindex(pd.period_range(
+        month_branch_created.index.min(), month_branch_created.index.max(), freq='m'), fill_value=0)
+    month_branch_created_dict = month_branch_created.to_dict()
+    branch_created_at_issues = []
+    for key in month_branch_created_dict.keys():
+        array = [str(key), month_branch_created_dict[key]]
+        branch_created_at_issues.append(array)
+    
+    '''
     Monthly Closed Issues
     Format the data by grouping the data by month
     ''' 
@@ -191,6 +242,21 @@ def github():
         "type": "closed_at",
         "repo": repo_name.split("/")[1]
     }
+    pr_created_at_body = {
+        "issues": issues_reponse,
+        "type": "pr_created_at",
+        "repo": repo_name.split("/")[1]
+    }
+    commit_created_at_body = {
+        "issues": issues_reponse,
+        "type": "commit_created_at",
+        "repo": repo_name.split("/")[1]
+    }
+    branch_created_at_body = {
+        "issues": issues_reponse,
+        "type": "branch_created_at",
+        "repo": repo_name.split("/")[1]
+    }
 
     # Update your Google cloud deployed LSTM app URL (NOTE: DO NOT REMOVE "/")
     LSTM_API_URL = "https://lstmtest1-epbp7e5iba-uc.a.run.app/" + "api/forecast"
@@ -213,6 +279,10 @@ def github():
                                        json=closed_at_body,
                                        headers={'content-type': 'application/json'})
     
+    pr_created_at_response = requests.post(LSTM_API_URL,
+                                        json=pr_created_at_body,
+                                        headers={'content-type': 'application/json','accept':'application/json'})
+    
     '''
     Create the final response that consists of:
         1. GitHub repository data obtained from GitHub API
@@ -228,6 +298,9 @@ def github():
         },
         "closedAtImageUrls": {
             **closed_at_response.json(),
+        },
+        "prCreatedAtImageUrls": {
+            **pr_created_at_response.json(),
         },
     }
     # Return the response back to client (React app)
